@@ -12,7 +12,7 @@ DfT Road Safety Data (STATS19) collision files for 2021, 2022 and 2023, download
 
 - Covers **Great Britain**, not Northern Ireland.
 - Only collisions reported to the police where someone was injured. Many minor ones are never reported.
-- The CSVs are not in this zip. They are fetched on first run (about 60 MB) and cached in `data/`.
+- The CSVs are not in this repository. They are fetched on first run (about 60 MB) and cached in `data/`.
 - Contains public sector information licensed under the Open Government Licence v3.0.
 
 ## Run it on a Mac
