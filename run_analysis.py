@@ -5,6 +5,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import roadrisk as rr
+import lamap
 
 OUT = Path(__file__).parent / "outputs"
 
@@ -30,6 +31,12 @@ def main():
     ax.plot(h["hour"], h["rate"] * 100, marker="o"); ax.fill_between(h["hour"], h["low"] * 100, h["high"] * 100, alpha=.2)
     ax.set_xlabel("Hour of day"); ax.set_ylabel("% fatal/serious"); ax.set_title("Severity share by hour")
     fig.tight_layout(); fig.savefig(OUT / "ksi_by_hour.png", dpi=130)
+
+    cmap = lamap.current_code_map(lamap.download_lookup())
+    rates, dropped = lamap.severity_by_authority(d, cmap)
+    lamap.draw_map(rates, lamap.download_boundaries(), OUT / "ksi_by_authority.png")
+    print(f"local-authority map: {rates['enough'].sum()} authorities coloured, "
+          f"{(~rates['enough']).sum()} grey, {dropped} rows with no matching authority")
 
     cal = rr.calibration_table(res["models"]["hgb"], test)
     fig, ax = plt.subplots(figsize=(4.5, 4.5))

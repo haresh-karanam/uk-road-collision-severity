@@ -27,7 +27,8 @@ FEATURES = NUMERIC + CATEGORICAL
 USECOLS = ["collision_year", "collision_severity", "date", "time", "speed_limit",
            "number_of_vehicles", "day_of_week", "road_type", "light_conditions",
            "weather_conditions", "road_surface_conditions", "urban_or_rural_area",
-           "junction_detail", "first_road_class", "police_force"]
+           "junction_detail", "first_road_class", "police_force",
+           "local_authority_ons_district"]
 
 LABELS = {
     "day_of_week": {1: "Sunday", 2: "Monday", 3: "Tuesday", 4: "Wednesday", 5: "Thursday", 6: "Friday", 7: "Saturday"},
