@@ -6,6 +6,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import roadrisk as rr
 import lamap
+import whorisk as wh
 
 OUT = Path(__file__).parent / "outputs"
 
@@ -37,6 +38,16 @@ def main():
     lamap.draw_map(rates, lamap.download_boundaries(), OUT / "ksi_by_authority.png")
     print(f"local-authority map: {rates['enough'].sum()} authorities coloured, "
           f"{(~rates['enough']).sum()} grey, {dropped} rows with no matching authority")
+
+    cas = wh.load_casualties()
+    veh = wh.load_vehicles()
+    coll_labels = wh.load_collision_labels()
+    age = wh.fatal_share_by_age_band(cas)
+    wh.chart_age(age, OUT / "who_fatal_share_by_age.png")
+    involved = wh.ksi_by_vehicle_involvement(coll_labels, veh)
+    wh.chart_vehicles(involved, OUT / "who_ksi_by_vehicle.png")
+    print(f"who: {len(age)} age bands, {len(involved)} vehicle groups; "
+          f"oldest band fatal share {age.iloc[-1]['rate']:.1%}")
 
     cal = rr.calibration_table(res["models"]["hgb"], test)
     fig, ax = plt.subplots(figsize=(4.5, 4.5))

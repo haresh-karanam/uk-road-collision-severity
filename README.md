@@ -8,16 +8,16 @@ It uses SQL (SQLite), Python (pandas, scikit-learn), a leakage-aware evaluation 
 The project was scoped in October 2026 against four UK data internship adverts reviewed at the time (United Utilities Data Analyst Intern, Arm Data Analytics Intern, Moloco Data Science Intern London, InPost UK Graduate Data, Analytics & AI Partner). They all asked for SQL or Python (most wanted both), most named a visualisation tool or dashboards, and the ones that mentioned modelling talked about *evaluating* it and explaining findings to non-specialists. So the project has a SQL layer with window functions, a train/test split by year, and a plain-English reading of what the numbers do and do not say.
 
 ## Data
-DfT Road Safety Data (STATS19) collision files for 2021, 2022 and 2023, downloaded on first run from data.dft.gov.uk. Published by the Department for Transport under the Open Government Licence v3.0. Page: https://www.data.gov.uk/dataset/cb7ae6f0-4be6-4935-9277-47e5ce24a11f/road-safety-data
+DfT Road Safety Data (STATS19) collision, casualty and vehicle files for 2021, 2022 and 2023, downloaded on first run from data.dft.gov.uk. Published by the Department for Transport under the Open Government Licence v3.0. Page: https://www.data.gov.uk/dataset/cb7ae6f0-4be6-4935-9277-47e5ce24a11f/road-safety-data
 
 - Covers **Great Britain**, not Northern Ireland.
 - Only collisions reported to the police where someone was injured. Many minor ones are never reported.
-- The CSVs are not in this repository. They are fetched on first run (about 60 MB) and cached in `data/`.
+- The CSVs are not in this repository. They are fetched on first run (about 160 MB across the collision, casualty and vehicle files) and cached in `data/`.
 - Contains public sector information licensed under the Open Government Licence v3.0.
 - The map step also downloads local-authority boundaries (Local Authority Districts, December 2023, UK BGC) and the 2022-to-2023 code lookup from the Office for National Statistics Open Geography Portal, also Open Government Licence v3.0.
 
 ## Run it on a Mac
-Every run behind this README was done by the AI assistant, on Linux with Python 3.10: first in October 2026, then reproduced on 22 November 2026 (12 tests passing, full pipeline re-run on a fresh download of the DfT files, metrics unchanged). It has not been run on a Mac, so if a step fails there, the error message is the lead to follow.
+Every run behind this README was done by the AI assistant, on Linux with Python 3.10: first in October 2026, then reproduced on 22 November 2026, and again on 24 November 2026 (26 tests passing, full pipeline re-run on a fresh download of the DfT files, metrics unchanged). It has not been run on a Mac, so if a step fails there, the error message is the lead to follow.
 
 Open Terminal in this folder.
 
@@ -25,7 +25,7 @@ Open Terminal in this folder.
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -r requirements.txt
-    python -m pytest -q                # 19 tests, offline, a few seconds
+    python -m pytest -q                # 26 tests, offline, a few seconds
     python run_analysis.py             # downloads data, prints metrics, writes charts to outputs/
     streamlit run app.py               # opens the app in your browser
 
@@ -39,8 +39,10 @@ The first `run_analysis.py` or app start needs internet.
 | `run_analysis.py` | Command-line run, writes `outputs/metrics.json` and charts. |
 | `app.py` | Streamlit app: explore, SQL results, model check, scenario tool. |
 | `lamap.py` | Local-authority severity map: ONS boundaries, the 2022-to-2023 code lookup, and the choropleth. |
+| `whorisk.py` | Who-is-involved views: fatal share by casualty age band, fatal/serious share by vehicle type. Descriptive only. |
 | `tests/test_roadrisk.py` | Tests on synthetic data shaped like the DfT file. |
 | `tests/test_lamap.py` | Tests for the map: code folding, dropped codes, thin-authority rule, intervals. |
+| `tests/test_whorisk.py` | Tests for the who-is-involved views on synthetic casualty and vehicle frames. |
 | `outputs/` | Charts and metrics from the most recent run, so you can see results before running anything. |
 
 ## Design decisions (good interview material)
@@ -71,6 +73,13 @@ The pattern is rural against urban: the highest shares are in rural Scotland (Ab
 
 Authorities with fewer than 200 collisions are grey, not dramatic. Collision rows from 2021-2022 that name districts abolished in April 2023 (Cumbria, North Yorkshire, Somerset) are folded into their successor authorities through the ONS 2022-to-2023 lookup; 56 rows carrying DfT's special Heathrow code have no authority to fold into and are left out.
 
+## Who is involved
+`run_analysis.py` also joins the DfT casualty and vehicle files and writes two more charts, `outputs/who_fatal_share_by_age.png` and `outputs/who_ksi_by_vehicle.png`. These are descriptive views only: they are never fed to the model, so the leakage controls above are unchanged, and the same Wilson intervals and minimum-count rules apply.
+
+Age. Of the 80,106 people killed or seriously injured in 2021-2023, the share who died rises steeply with age. For casualties over 75 it is 13.6% (95% CI 12.7-14.6); for 11-15 year olds it is 1.9%. A serious injury is about seven times as likely to prove fatal at the oldest ages as at the youngest.
+
+Vehicles. Of the 311,349 reported collisions, 32.3% of those involving a motorcycle were fatal or serious, against 21.6% of those involving a car. Heavy goods vehicles (25.9%) and pedal cycles (25.0%) sit between. A collision counts once per vehicle group involved in it, so a car-motorcycle crash appears in both rows. As everywhere in this project, this is share among reported collisions, not danger per mile travelled.
+
 ## Limits you should say out loud
 - This is **severity given that a collision was reported**, not the risk of having one. There is no traffic or distance data, so "60 mph rural roads are worst" does not mean those roads are the most dangerous per mile. 70 mph roads show a lower share than 60 mph roads here, which is a reminder that road type and speed limit are tangled together.
 - Associations only. Nothing here shows that changing a speed limit would change outcomes.
@@ -79,9 +88,9 @@ Authorities with fewer than 200 collisions are grey, not dramatic. Collision row
 - Three years only; 2020 is excluded because its file format was not checked.
 
 ## Ideas to make it yours
-Add a map by local authority; add the vehicle and casualty files to study who is involved (then re-check leakage); compare police forces with a multilevel model; add exposure data from DfT traffic counts to move from severity to rate.
+Add exposure data from DfT traffic counts to move from severity to rate, including a per-mile view for the vehicle types; compare police forces with a multilevel model.
 
 ## Assistance and attribution
-This project was created with the help of an AI assistant (Instinct), which wrote the code, tests and this README from the brief above, and which ran and verified every result quoted here (most recently on 22 November 2026). Say that plainly if asked. Before presenting it, run it, read `roadrisk.py` until you can explain each step, change something and see what breaks. Do not claim analysis you cannot explain.
+This project was created with the help of an AI assistant (Instinct), which wrote the code, tests and this README from the brief above, and which ran and verified every result quoted here (most recently on 24 November 2026). Say that plainly if asked. Before presenting it, run it, read `roadrisk.py` until you can explain each step, change something and see what breaks. Do not claim analysis you cannot explain.
 
 Data: DfT Road Safety Data, Open Government Licence v3.0. Code: your own to licence as you choose.
