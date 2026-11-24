@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import roadrisk as rr
 import lamap
 import whorisk as wh
+import exposure as ex
 
 OUT = Path(__file__).parent / "outputs"
 
@@ -48,6 +49,13 @@ def main():
     wh.chart_vehicles(involved, OUT / "who_ksi_by_vehicle.png")
     print(f"who: {len(age)} age bands, {len(involved)} vehicle groups; "
           f"oldest band fatal share {age.iloc[-1]['rate']:.1%}")
+
+    miles = ex.gb_vehicle_miles()
+    per_mile = ex.ksi_per_billion_miles(coll_labels, veh, miles)
+    ex.chart_exposure(per_mile, OUT / "who_ksi_per_billion_miles.png")
+    top = per_mile.iloc[0]
+    print(f"exposure: highest per-mile involvement {top['group']} "
+          f"{top['rate']:.0f} per billion miles")
 
     cal = rr.calibration_table(res["models"]["hgb"], test)
     fig, ax = plt.subplots(figsize=(4.5, 4.5))

@@ -15,9 +15,10 @@ DfT Road Safety Data (STATS19) collision, casualty and vehicle files for 2021, 2
 - The CSVs are not in this repository. They are fetched on first run (about 160 MB across the collision, casualty and vehicle files) and cached in `data/`.
 - Contains public sector information licensed under the Open Government Licence v3.0.
 - The map step also downloads local-authority boundaries (Local Authority Districts, December 2023, UK BGC) and the 2022-to-2023 code lookup from the Office for National Statistics Open Geography Portal, also Open Government Licence v3.0.
+- The per-mile step also downloads DfT road traffic estimates (regional traffic by vehicle type, summed to Great Britain), accredited official statistics, Open Government Licence v3.0. Page: https://roadtraffic.dft.gov.uk/downloads
 
 ## Run it on a Mac
-Every run behind this README was done by the AI assistant, on Linux with Python 3.10: first in October 2026, then reproduced on 22 November 2026, and again on 24 November 2026 (26 tests passing, full pipeline re-run on a fresh download of the DfT files, metrics unchanged). It has not been run on a Mac, so if a step fails there, the error message is the lead to follow.
+Every run behind this README was done by the AI assistant, on Linux with Python 3.10: first in October 2026, then reproduced on 22 November 2026, and again on 24 November 2026 (31 tests passing, full pipeline re-run on a fresh download of the DfT files, metrics unchanged). It has not been run on a Mac, so if a step fails there, the error message is the lead to follow.
 
 Open Terminal in this folder.
 
@@ -25,7 +26,7 @@ Open Terminal in this folder.
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -r requirements.txt
-    python -m pytest -q                # 26 tests, offline, a few seconds
+    python -m pytest -q                # 31 tests, offline, a few seconds
     python run_analysis.py             # downloads data, prints metrics, writes charts to outputs/
     streamlit run app.py               # opens the app in your browser
 
@@ -40,9 +41,11 @@ The first `run_analysis.py` or app start needs internet.
 | `app.py` | Streamlit app: explore, SQL results, model check, scenario tool. |
 | `lamap.py` | Local-authority severity map: ONS boundaries, the 2022-to-2023 code lookup, and the choropleth. |
 | `whorisk.py` | Who-is-involved views: fatal share by casualty age band, fatal/serious share by vehicle type. Descriptive only. |
+| `exposure.py` | Per-mile view: fatal/serious involvement per billion vehicle-miles, joining DfT traffic estimates. Descriptive only. |
 | `tests/test_roadrisk.py` | Tests on synthetic data shaped like the DfT file. |
 | `tests/test_lamap.py` | Tests for the map: code folding, dropped codes, thin-authority rule, intervals. |
 | `tests/test_whorisk.py` | Tests for the who-is-involved views on synthetic casualty and vehicle frames. |
+| `tests/test_exposure.py` | Tests for the per-mile view: traffic summing, group merging, rate intervals. |
 | `outputs/` | Charts and metrics from the most recent run, so you can see results before running anything. |
 
 ## Design decisions (good interview material)
@@ -78,17 +81,24 @@ Authorities with fewer than 200 collisions are grey, not dramatic. Collision row
 
 Age. Of the 80,106 people killed or seriously injured in 2021-2023, the share who died rises steeply with age. For casualties over 75 it is 13.6% (95% CI 12.7-14.6); for 11-15 year olds it is 1.9%. A serious injury is about seven times as likely to prove fatal at the oldest ages as at the youngest.
 
-Vehicles. Of the 311,349 reported collisions, 32.3% of those involving a motorcycle were fatal or serious, against 21.6% of those involving a car. Heavy goods vehicles (25.9%) and pedal cycles (25.0%) sit between. A collision counts once per vehicle group involved in it, so a car-motorcycle crash appears in both rows. As everywhere in this project, this is share among reported collisions, not danger per mile travelled.
+Vehicles. Of the 311,349 reported collisions, 32.3% of those involving a motorcycle were fatal or serious, against 21.6% of those involving a car. Heavy goods vehicles (25.9%) and pedal cycles (25.0%) sit between. A collision counts once per vehicle group involved in it, so a car-motorcycle crash appears in both rows. As everywhere in this project, this is share among reported collisions, not danger per mile travelled. The next section takes that last step.
+
+## Per mile travelled
+`run_analysis.py` also writes `outputs/who_ksi_per_billion_miles.png`: fatal/serious involvement per billion vehicle-miles, joining the DfT road traffic estimates for the same years. This answers the biggest caveat in the sections above, at least for vehicle types at Great Britain level.
+
+Per mile travelled, the gaps are far wider than per collision. Collisions involving a motorcycle were fatal or serious 2,046 times per billion motorcycle-miles (95% Poisson interval 2,015-2,077); for pedal cycles 1,030; for buses and coaches 390. Cars and taxis sit at 81, heavy goods at 61, vans at 45. Riding a motorcycle is around 25 times as likely as driving a car to be involved in a fatal or serious collision per mile. That ordering matches DfT's own published casualty rates, which is a good sanity check on the join.
+
+Honest reading: this is still an involvement rate (a car-motorcycle crash counts once for each group), and the traffic estimates combine cars and taxis, so those two groups are merged. Traffic figures are estimates, most robust at national level; pedal cycle miles include e-bikes and are the least robust column. Same descriptive-only rule: this view is never fed to the model.
 
 ## Limits you should say out loud
-- This is **severity given that a collision was reported**, not the risk of having one. There is no traffic or distance data, so "60 mph rural roads are worst" does not mean those roads are the most dangerous per mile. 70 mph roads show a lower share than 60 mph roads here, which is a reminder that road type and speed limit are tangled together.
+- This is mostly **severity given that a collision was reported**. The per-mile view adds exposure for vehicle types at Great Britain level, but the speed-limit, road-type, hour and local-authority views still have no traffic or distance data, so "60 mph rural roads are worst" does not mean those roads are the most dangerous per mile. 70 mph roads show a lower share than 60 mph roads here, which is a reminder that road type and speed limit are tangled together.
 - Associations only. Nothing here shows that changing a speed limit would change outcomes.
 - The scenario tool is a retrospective illustration, not a forecast and not safety advice.
 - Reporting practices and severity classification differ between police forces and change over time. That is not modelled here. Most forces now record severity through injury-based reporting systems (39 of 44 by the end of 2025, per DfT), which classifies more casualties as serious than officer judgement did.
 - Three years only; 2020 is excluded because its file format was not checked.
 
 ## Ideas to make it yours
-Add exposure data from DfT traffic counts to move from severity to rate, including a per-mile view for the vehicle types; compare police forces with a multilevel model.
+Add local-authority-level exposure from the same DfT traffic estimates to put the map on a per-mile footing; compare police forces with a multilevel model.
 
 ## Assistance and attribution
 This project was created with the help of an AI assistant (Instinct), which wrote the code, tests and this README from the brief above, and which ran and verified every result quoted here (most recently on 24 November 2026). Say that plainly if asked. Before presenting it, run it, read `roadrisk.py` until you can explain each step, change something and see what breaks. Do not claim analysis you cannot explain.
