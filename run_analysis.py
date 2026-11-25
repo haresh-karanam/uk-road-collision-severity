@@ -6,6 +6,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import roadrisk as rr
 import lamap
+import lamiles as lm
 import whorisk as wh
 import exposure as ex
 
@@ -39,6 +40,14 @@ def main():
     lamap.draw_map(rates, lamap.download_boundaries(), OUT / "ksi_by_authority.png")
     print(f"local-authority map: {rates['enough'].sum()} authorities coloured, "
           f"{(~rates['enough']).sum()} grey, {dropped} rows with no matching authority")
+
+    hwy = lm.county_map(lm.download_county_lookup())
+    la_miles = lm.traffic_miles(lm.download_traffic())
+    per_mile_la = lm.ksi_per_mile_by_authority(rates, hwy, la_miles)
+    lm.draw_map(per_mile_la, lm.download_ctyua_boundaries(), OUT / "ksi_per_mile_by_authority.png")
+    hi = per_mile_la[per_mile_la["enough"]].nlargest(1, "rate").iloc[0]
+    print(f"per-mile map: {per_mile_la['enough'].sum()} highway authorities coloured; "
+          f"highest {hi['authority']} {hi['rate']:.0f} per billion miles")
 
     cas = wh.load_casualties()
     veh = wh.load_vehicles()
