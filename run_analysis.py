@@ -8,6 +8,7 @@ import roadrisk as rr
 import lamap
 import lamiles as lm
 import whorisk as wh
+import whhurt as hh
 import exposure as ex
 
 OUT = Path(__file__).parent / "outputs"
@@ -58,6 +59,11 @@ def main():
     wh.chart_vehicles(involved, OUT / "who_ksi_by_vehicle.png")
     print(f"who: {len(age)} age bands, {len(involved)} vehicle groups; "
           f"oldest band fatal share {age.iloc[-1]['rate']:.1%}")
+
+    mix = hh.share_by_group(hh.load_casualty_groups())
+    hh.chart_mix(mix, OUT / "who_hurt_casualty_mix.png")
+    lon_ped = mix[(mix["area"] == "London") & (mix["group"] == "Pedestrian")].iloc[0]
+    print(f"hurt: London pedestrians {lon_ped['rate']:.1%} of KSI casualties")
 
     miles = ex.gb_vehicle_miles()
     per_mile = ex.ksi_per_billion_miles(coll_labels, veh, miles)

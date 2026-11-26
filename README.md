@@ -18,7 +18,7 @@ DfT Road Safety Data (STATS19) collision, casualty and vehicle files for 2021, 2
 - The per-mile step also downloads DfT road traffic estimates (regional traffic by vehicle type, summed to Great Britain), accredited official statistics, Open Government Licence v3.0. Page: https://roadtraffic.dft.gov.uk/downloads
 
 ## Run it on a Mac
-Every run behind this README was done by the AI assistant, on Linux with Python 3.10: first in October 2026, then reproduced on 22 November 2026, 24 November 2026, and 25 November 2026 (36 tests passing, full pipeline re-run on a fresh download of the DfT files, metrics unchanged). It has not been run on a Mac, so if a step fails there, the error message is the lead to follow.
+Every run behind this README was done by the AI assistant, on Linux with Python 3.10: first in October 2026, then reproduced on 22 November 2026, 24 November 2026, 25 November 2026, and 26 November 2026 (41 tests passing, full pipeline re-run on a fresh download of the DfT files, metrics unchanged). It has not been run on a Mac, so if a step fails there, the error message is the lead to follow.
 
 Open Terminal in this folder.
 
@@ -26,7 +26,7 @@ Open Terminal in this folder.
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -r requirements.txt
-    python -m pytest -q                # 36 tests, offline, a few seconds
+    python -m pytest -q                # 41 tests, offline, a few seconds
     python run_analysis.py             # downloads data, prints metrics, writes charts to outputs/
     streamlit run app.py               # opens the app in your browser
 
@@ -42,11 +42,13 @@ The first `run_analysis.py` or app start needs internet.
 | `lamap.py` | Local-authority severity map: ONS boundaries, the 2022-to-2023 code lookup, and the choropleth. |
 | `lamiles.py` | Per-mile map: KSI collisions per billion vehicle-miles by highway authority, joining DfT local-authority traffic estimates. |
 | `whorisk.py` | Who-is-involved views: fatal share by casualty age band, fatal/serious share by vehicle type. Descriptive only. |
+| `whhurt.py` | Who-gets-hurt view: the fatal/serious casualty mix by road-user type, London against the rest of GB. Descriptive only. |
 | `exposure.py` | Per-mile view: fatal/serious involvement per billion vehicle-miles, joining DfT traffic estimates. Descriptive only. |
 | `tests/test_roadrisk.py` | Tests on synthetic data shaped like the DfT file. |
 | `tests/test_lamap.py` | Tests for the map: code folding, dropped codes, thin-authority rule, intervals. |
 | `tests/test_lamiles.py` | Tests for the per-mile map: district-to-county folding, the Cumbria quirk, rate intervals. |
 | `tests/test_whorisk.py` | Tests for the who-is-involved views on synthetic casualty and vehicle frames. |
+| `tests/test_whhurt.py` | Tests for the casualty-mix view: road-user grouping, London split, intervals. |
 | `tests/test_exposure.py` | Tests for the per-mile view: traffic summing, group merging, rate intervals. |
 | `outputs/` | Charts and metrics from the most recent run, so you can see results before running anything. |
 
@@ -85,6 +87,11 @@ Age. Of the 80,106 people killed or seriously injured in 2021-2023, the share wh
 
 Vehicles. Of the 311,349 reported collisions, 32.3% of those involving a motorcycle were fatal or serious, against 21.6% of those involving a car. Heavy goods vehicles (25.9%) and pedal cycles (25.0%) sit between. A collision counts once per vehicle group involved in it, so a car-motorcycle crash appears in both rows. As everywhere in this project, this is share among reported collisions, not danger per mile travelled. The next section takes that last step.
 
+## Who gets hurt
+`run_analysis.py` also writes `outputs/who_hurt_casualty_mix.png`: of everyone killed or seriously injured, which road users are they, split London against the rest of Great Britain (a London borough is a local authority coded E09xxxxx).
+
+The mix is completely different inside and outside the capital. In London, 30.8% of fatal/serious casualties are pedestrians, 26.3% pedal cyclists and 23.0% motorcyclists: four in five people killed or seriously injured are walking, cycling or on a motorcycle, and car or taxi occupants are only 13.6%. In the rest of Great Britain the largest group is car and taxi occupants at 42.1%, with pedestrians 19.6%, motorcyclists 19.8% and cyclists 12.5%. This is the people-level counterpart of the vehicle charts above: what protects you in a crash, and how much of you there is to hit, differ sharply between dense urban roads and everywhere else. Descriptive only, never fed to the model.
+
 ## Per mile travelled
 `run_analysis.py` also writes `outputs/who_ksi_per_billion_miles.png`: fatal/serious involvement per billion vehicle-miles, joining the DfT road traffic estimates for the same years. This answers the biggest caveat in the sections above, at least for vehicle types at Great Britain level.
 
@@ -110,6 +117,6 @@ Two honest wrinkles: urban miles understate how much exposure happens in cities 
 Compare police forces with a multilevel model; bring in casualty mode and hospital data to separate collision rate from injury severity further.
 
 ## Assistance and attribution
-This project was created with the help of an AI assistant (Instinct), which wrote the code, tests and this README from the brief above, and which ran and verified every result quoted here (most recently on 25 November 2026). Say that plainly if asked. Before presenting it, run it, read `roadrisk.py` until you can explain each step, change something and see what breaks. Do not claim analysis you cannot explain.
+This project was created with the help of an AI assistant (Instinct), which wrote the code, tests and this README from the brief above, and which ran and verified every result quoted here (most recently on 26 November 2026). Say that plainly if asked. Before presenting it, run it, read `roadrisk.py` until you can explain each step, change something and see what breaks. Do not claim analysis you cannot explain.
 
 Data: DfT Road Safety Data, Open Government Licence v3.0. Code: your own to licence as you choose.
