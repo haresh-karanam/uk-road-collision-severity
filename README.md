@@ -18,7 +18,7 @@ DfT Road Safety Data (STATS19) collision, casualty and vehicle files for 2021, 2
 - The per-mile step also downloads DfT road traffic estimates (regional traffic by vehicle type, summed to Great Britain), accredited official statistics, Open Government Licence v3.0. Page: https://roadtraffic.dft.gov.uk/downloads
 
 ## Run it on a Mac
-Every run behind this README was done by the AI assistant, on Linux with Python 3.10: first in October 2026, then reproduced on 22 November 2026, 24 November 2026, 25 November 2026, and 26 November 2026 (41 tests passing, full pipeline re-run on a fresh download of the DfT files, metrics unchanged). It has not been run on a Mac, so if a step fails there, the error message is the lead to follow.
+Every run behind this README was done by the AI assistant, on Linux with Python 3.10: first in October 2026, then reproduced on 22 November 2026, 24 November 2026, 25 November 2026, and 26-27 November 2026 (44 tests passing, full pipeline re-run on a fresh download of the DfT files, metrics unchanged). It has not been run on a Mac, so if a step fails there, the error message is the lead to follow.
 
 Open Terminal in this folder.
 
@@ -26,7 +26,7 @@ Open Terminal in this folder.
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -r requirements.txt
-    python -m pytest -q                # 41 tests, offline, a few seconds
+    python -m pytest -q                # 44 tests, offline, a few seconds
     python run_analysis.py             # downloads data, prints metrics, writes charts to outputs/
     streamlit run app.py               # opens the app in your browser
 
@@ -43,12 +43,14 @@ The first `run_analysis.py` or app start needs internet.
 | `lamiles.py` | Per-mile map: KSI collisions per billion vehicle-miles by highway authority, joining DfT local-authority traffic estimates. |
 | `whorisk.py` | Who-is-involved views: fatal share by casualty age band, fatal/serious share by vehicle type. Descriptive only. |
 | `whhurt.py` | Who-gets-hurt view: the fatal/serious casualty mix by road-user type, London against the rest of GB. Descriptive only. |
+| `yeartrend.py` | Three-year trend: severity share and per-mile KSI by year, with the COVID and recording caveats. Descriptive only. |
 | `exposure.py` | Per-mile view: fatal/serious involvement per billion vehicle-miles, joining DfT traffic estimates. Descriptive only. |
 | `tests/test_roadrisk.py` | Tests on synthetic data shaped like the DfT file. |
 | `tests/test_lamap.py` | Tests for the map: code folding, dropped codes, thin-authority rule, intervals. |
 | `tests/test_lamiles.py` | Tests for the per-mile map: district-to-county folding, the Cumbria quirk, rate intervals. |
 | `tests/test_whorisk.py` | Tests for the who-is-involved views on synthetic casualty and vehicle frames. |
 | `tests/test_whhurt.py` | Tests for the casualty-mix view: road-user grouping, London split, intervals. |
+| `tests/test_yeartrend.py` | Tests for the trend view: yearly aggregation, traffic joining, intervals. |
 | `tests/test_exposure.py` | Tests for the per-mile view: traffic summing, group merging, rate intervals. |
 | `outputs/` | Charts and metrics from the most recent run, so you can see results before running anything. |
 
@@ -106,6 +108,11 @@ The pattern flips the district map's story. Per mile travelled, central London i
 
 Two honest wrinkles: urban miles understate how much exposure happens in cities (the denominator counts only motor-vehicle miles, while city collisions often involve people walking or cycling), and DfT's traffic estimates for small areas are less robust than the national figures. Same descriptive-only rule: never fed to the model.
 
+## Three years of change
+`run_analysis.py` also writes `outputs/year_trend.png`: the three years kept separate, as severity share of collisions and as KSI per billion vehicle-miles. Every other view in this project pools 2021-2023; this one shows whether pooling hides a trend.
+
+Two different stories emerge. The severity share of reported collisions rose from 22.5% (2021) to 23.9% (2023). But per mile travelled, fatal/serious collisions were essentially flat: 76.5, 77.0 and 75.5 per billion vehicle-miles. 2021 traffic was still COVID-depressed (297.6 billion vehicle-miles against 330.8 in 2023), which is why the per-mile panel is the fairer comparison. The rising serious share is consistent with the recording change already in the limits below: as police forces adopted injury-based reporting through this period, more casualties were classified as serious, so at least part of that rise is the paperwork, not the roads. Descriptive only, never fed to the model.
+
 ## Limits you should say out loud
 - This is mostly **severity given that a collision was reported**. The per-mile views add exposure for vehicle types and for highway-authority areas, but the speed-limit, road-type and hour views still have no traffic or distance data, so "60 mph rural roads are worst" does not mean those roads are the most dangerous per mile. 70 mph roads show a lower share than 60 mph roads here, which is a reminder that road type and speed limit are tangled together.
 - Associations only. Nothing here shows that changing a speed limit would change outcomes.
@@ -117,6 +124,6 @@ Two honest wrinkles: urban miles understate how much exposure happens in cities 
 Compare police forces with a multilevel model; bring in casualty mode and hospital data to separate collision rate from injury severity further.
 
 ## Assistance and attribution
-This project was created with the help of an AI assistant (Instinct), which wrote the code, tests and this README from the brief above, and which ran and verified every result quoted here (most recently on 26 November 2026). Say that plainly if asked. Before presenting it, run it, read `roadrisk.py` until you can explain each step, change something and see what breaks. Do not claim analysis you cannot explain.
+This project was created with the help of an AI assistant (Instinct), which wrote the code, tests and this README from the brief above, and which ran and verified every result quoted here (most recently on 27 November 2026). Say that plainly if asked. Before presenting it, run it, read `roadrisk.py` until you can explain each step, change something and see what breaks. Do not claim analysis you cannot explain.
 
 Data: DfT Road Safety Data, Open Government Licence v3.0. Code: your own to licence as you choose.

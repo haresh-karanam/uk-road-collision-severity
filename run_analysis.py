@@ -9,6 +9,7 @@ import lamap
 import lamiles as lm
 import whorisk as wh
 import whhurt as hh
+import yeartrend as yt
 import exposure as ex
 
 OUT = Path(__file__).parent / "outputs"
@@ -64,6 +65,12 @@ def main():
     hh.chart_mix(mix, OUT / "who_hurt_casualty_mix.png")
     lon_ped = mix[(mix["area"] == "London") & (mix["group"] == "Pedestrian")].iloc[0]
     print(f"hurt: London pedestrians {lon_ped['rate']:.1%} of KSI casualties")
+
+    trend = yt.yearly_table()
+    yt.chart_trend(trend, OUT / "year_trend.png")
+    print(f"trend: per-mile KSI {trend.iloc[0]['per_bvm']:.1f} -> "
+          f"{trend.iloc[-1]['per_bvm']:.1f} per billion miles, "
+          f"{trend.iloc[0]['year']}-{trend.iloc[-1]['year']}")
 
     miles = ex.gb_vehicle_miles()
     per_mile = ex.ksi_per_billion_miles(coll_labels, veh, miles)
